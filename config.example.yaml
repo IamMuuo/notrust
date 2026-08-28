@@ -1,0 +1,36 @@
+# NOTRUST daemon configuration
+#
+# Copy this file to one of:
+#   ./config.yaml
+#   ~/.config/notrust/config.yaml
+#   /etc/notrust/config.yaml
+#
+# Every key below can also be set as an environment variable, prefixed
+# with NOTRUST_. Example: poll_interval becomes NOTRUST_POLL_INTERVAL.
+# Environment variables always win over whatever is set here.
+
+# How often the daemon samples container metrics to evaluate idle state.
+# Accepts Go duration strings: "500ms", "3s", "1m".
+poll_interval: 1s
+
+# --- reserved, not implemented yet ---
+# these are the sections planned for upcoming milestones, left here so
+# the shape of the config is visible ahead of time
+
+# docker:
+#   host: unix:///var/run/docker.sock
+
+# idle:
+#   pause_after: 10m
+#   stop_after: 30m
+#   cpu_threshold_percent: 0.5
+
+# proxy:
+#   bind_address: 127.0.0.1
+
+# notify:
+#   enabled: true
+#   quiet_hours: ["22:00-08:00"]
+
+# log:
+#   level: info

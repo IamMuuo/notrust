@@ -18,7 +18,7 @@ build-cli:
 
 # run the daemon in the foreground with debug logging, using local config
 dev: build-daemon
-    {{bin_dir}}/{{daemon}} --log-level=debug --config=./configs/config.example.yaml
+    {{bin_dir}}/{{daemon}} --log-level=debug --config=./config.example.yaml
 
 # quick status check against a running daemon
 status: build-cli
@@ -43,7 +43,7 @@ test-integration:
 
 fmt:
     gofmt -l -w .
-    goimports -w .
+    goimports-reviser -format .
 
 vet:
     go vet ./...
@@ -69,7 +69,7 @@ release:
 install-service: build-daemon
     mkdir -p ~/.local/bin ~/.config/systemd/user ~/.config/notrust
     cp {{bin_dir}}/{{daemon}} ~/.local/bin/{{daemon}}
-    cp configs/notrust.service ~/.config/systemd/user/notrust.service
+    cp notrust.service ~/.config/systemd/user/notrust.service
     cp -n config.example.yaml ~/.config/notrust/config.yaml
     systemctl --user daemon-reload
     systemctl --user enable --now notrust.service

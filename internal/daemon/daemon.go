@@ -4,22 +4,24 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/iammuuo/notrust/internal/config"
 )
 
 type Daemon struct {
-	Logger   *slog.Logger
-	Interval time.Duration
+	Logger *slog.Logger
+	Cfg    *config.Config
 }
 
-func New(logger *slog.Logger) *Daemon {
+func New(logger *slog.Logger, config *config.Config) *Daemon {
 	return &Daemon{
-		Logger:   logger,
-		Interval: 3 * time.Second,
+		Logger: logger,
+		Cfg:    config,
 	}
 }
 
 func (d *Daemon) Run(ctx context.Context) error {
-	ticker := time.NewTicker(d.Interval)
+	ticker := time.NewTicker(d.Cfg.PollInterval)
 	defer ticker.Stop()
 
 	for {

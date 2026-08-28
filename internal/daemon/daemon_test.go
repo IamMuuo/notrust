@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/iammuuo/notrust/internal/config"
 )
 
 func TestRun_StopsOnContextCancel(t *testing.T) {
@@ -15,10 +17,7 @@ func TestRun_StopsOnContextCancel(t *testing.T) {
 		slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
 
-	d := New(logger)
-	d.Interval = time.Duration(
-		1,
-	) * time.Millisecond // fast tick, keeps the test near instant
+	d := New(logger, &config.Config{PollInterval: 5 * time.Millisecond})
 
 	ctx, cancel := context.WithCancel(context.Background())
 

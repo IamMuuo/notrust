@@ -2,22 +2,44 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/iammuuo/notrust/internal/config"
 	"github.com/iammuuo/notrust/internal/daemon"
 )
 
 func main() {
-	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	})
-	logger := slog.New(handler)
+	configPath := flag.String("config", "", "path to config file")
+	logLevelFlag := flag.String(
+		"log-level",
+		"info",
+		"log level: debug, info, warn, error",
+	)
+	flag.Parse()
+
+	var level slog.Level
+	if err := level.UnmarshalText([]byte(*logLevelFlag)); err != nil {
+		fmt.Fprintf(os.Stderr, "invalid log level %q: %v\n", *logLevelFlag, err)
+		os.Exit(1)
+	}
+
+	logger := slog.New(
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}),
+	)
 	slog.SetDefault(logger)
 
-	d := daemon.New(logger)
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		slog.Error("failed to load config", "err", err)
+		os.Exit(1)
+	}
+
+	d := daemon.New(logger, cfg)
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
@@ -27,10 +49,7 @@ func main() {
 	defer cancel()
 
 	done := make(chan error, 1)
-
-	go func() {
-		done <- d.Run(ctx)
-	}()
+	go func() { done <- d.Run(ctx) }()
 
 	slog.Info("starting notrustd daemon...")
 
