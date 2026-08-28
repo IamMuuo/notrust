@@ -33,6 +33,10 @@ install:
 test:
     go test ./...
 
+# same, with the race detector on, slower but worth running before pushing
+test-race:
+    go test -race ./...
+
 # integration tests, needs a real docker daemon
 test-integration:
     go test -tags=integration ./test/integration/...
@@ -61,11 +65,15 @@ release:
     GOOS=linux GOARCH=amd64 go build -o {{bin_dir}}/{{daemon}}-linux-amd64 ./cmd/notrustd
     GOOS=linux GOARCH=arm64 go build -o {{bin_dir}}/{{daemon}}-linux-arm64 ./cmd/notrustd
 
-# install the systemd unit and reload
-install-service:
-    sudo cp configs/notrust.service /etc/systemd/system/notrust.service
-    sudo systemctl daemon-reload
+# install as a per user systemd service, needed so notify-send/D-Bus works
+install-service: build-daemon
+    mkdir -p ~/.local/bin ~/.config/systemd/user ~/.config/notrust
+    cp {{bin_dir}}/{{daemon}} ~/.local/bin/{{daemon}}
+    cp configs/notrust.service ~/.config/systemd/user/notrust.service
+    cp -n config.example.yaml ~/.config/notrust/config.yaml
+    systemctl --user daemon-reload
+    systemctl --user enable --now notrust.service
 
 # tail daemon logs
 logs:
-    journalctl -u notrustd -f
+    journalctl --user -u notrust -f

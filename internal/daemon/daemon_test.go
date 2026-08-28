@@ -1,0 +1,50 @@
+package daemon
+
+import (
+	"bytes"
+	"context"
+	"log/slog"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestRun_StopsOnContextCancel(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(
+		slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}),
+	)
+
+	d := New(logger)
+	d.Interval = time.Duration(
+		1,
+	) * time.Millisecond // fast tick, keeps the test near instant
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	errCh := make(chan error, 1)
+	go func() { errCh <- d.Run(ctx) }()
+
+	time.Sleep(30 * time.Millisecond) // let a couple of ticks happen
+	cancel()
+
+	select {
+	case err := <-errCh:
+		if err != nil {
+			t.Fatalf("Run returned error: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal(
+			"Run did not return after context cancel — possible goroutine leak",
+		)
+	}
+
+	out := buf.String()
+	t.Log(out)
+	if !strings.Contains(out, "polling docker containers") {
+		t.Error("expected at least one poll log line before shutdown")
+	}
+	if !strings.Contains(out, "stopping poller") {
+		t.Error("expected shutdown log line")
+	}
+}
