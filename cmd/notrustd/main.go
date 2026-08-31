@@ -11,6 +11,8 @@ import (
 
 	"github.com/iammuuo/notrust/internal/config"
 	"github.com/iammuuo/notrust/internal/daemon"
+	"github.com/iammuuo/notrust/internal/docker"
+	"github.com/iammuuo/notrust/internal/state"
 )
 
 func main() {
@@ -39,7 +41,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	d := daemon.New(logger, cfg)
+	engine, err := docker.NewEngine()
+	if err != nil {
+		slog.Error("failed to connect to docker", "err", err)
+		os.Exit(1)
+	}
+
+	d := daemon.New(logger, cfg, engine, state.NeverIdle{})
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),

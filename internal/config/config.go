@@ -16,6 +16,8 @@ const envPrefix = "NOTRUST"
 // grows (docker connection, idle thresholds, proxy, notify, logging).
 type Config struct {
 	PollInterval time.Duration `mapstructure:"poll_interval"`
+	PauseAfter   time.Duration `mapstructure:"pause_after"`
+	StopAfter    time.Duration `mapstructure:"stop_after"`
 }
 
 // Load reads configuration in order of increasing precedence: built in
@@ -38,6 +40,8 @@ func Load(path string) (*Config, error) {
 	// defaults registered before AutomaticEnv so env vars reliably
 	// override every known key during Unmarshal, see note above
 	v.SetDefault("poll_interval", 3*time.Second)
+	v.SetDefault("pause_after", 10*time.Minute)
+	v.SetDefault("stop_after", 30*time.Minute)
 
 	v.SetEnvPrefix(envPrefix)
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

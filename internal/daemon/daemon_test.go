@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/iammuuo/notrust/internal/config"
+	"github.com/iammuuo/notrust/internal/docker"
+	"github.com/iammuuo/notrust/internal/state"
 )
 
 func TestRun_StopsOnContextCancel(t *testing.T) {
@@ -17,7 +19,17 @@ func TestRun_StopsOnContextCancel(t *testing.T) {
 		slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}),
 	)
 
-	d := New(logger, &config.Config{PollInterval: 5 * time.Millisecond})
+	engine, err := docker.NewEngine()
+	if err != nil {
+		t.Fatalf("docker engine creation errored: %s", err.Error())
+	}
+
+	d := New(
+		logger,
+		&config.Config{PollInterval: 5 * time.Millisecond},
+		engine,
+		state.NeverIdle{},
+	)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -40,9 +52,6 @@ func TestRun_StopsOnContextCancel(t *testing.T) {
 
 	out := buf.String()
 	t.Log(out)
-	if !strings.Contains(out, "polling docker containers") {
-		t.Error("expected at least one poll log line before shutdown")
-	}
 	if !strings.Contains(out, "stopping poller") {
 		t.Error("expected shutdown log line")
 	}

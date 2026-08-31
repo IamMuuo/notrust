@@ -2,29 +2,45 @@ package daemon
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/iammuuo/notrust/internal/config"
 	"github.com/iammuuo/notrust/internal/docker"
+	"github.com/iammuuo/notrust/internal/state"
 )
 
 type Daemon struct {
-	Logger *slog.Logger
-	Cfg    *config.Config
-	Engine docker.Engine
+	Logger   *slog.Logger
+	Cfg      *config.Config
+	Engine   docker.Engine
+	Registry *state.Registry
+	Machine  *state.Machine
 }
 
-func New(logger *slog.Logger, config *config.Config) *Daemon {
-	engine, err := docker.NewEngine()
-	if err != nil {
-		panic(err)
+func New(
+	logger *slog.Logger,
+	cfg *config.Config,
+	engine docker.Engine,
+	idle state.IdleChecker,
+) *Daemon {
+	registry := state.NewRegistry()
+	machine := &state.Machine{
+		Registry: registry,
+		Engine:   engine,
+		Idle:     idle,
+		Thresholds: state.Thresholds{
+			PauseAfter: cfg.PauseAfter,
+			StopAfter:  cfg.StopAfter,
+		},
+		Logger: logger,
 	}
 	return &Daemon{
-		Logger: logger,
-		Cfg:    config,
-		Engine: engine,
+		Logger:   logger,
+		Cfg:      cfg,
+		Engine:   engine,
+		Registry: registry,
+		Machine:  machine,
 	}
 }
 
@@ -35,11 +51,13 @@ func (d *Daemon) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			containers, _ := d.Engine.List(ctx)
-			fmt.Printf("%30s %30s\n", "Name", "State")
-			for _, container := range containers {
-				fmt.Printf("%30s %30s\n", container.Name, container.State)
+			containers, err := d.Engine.List(ctx)
+			if err != nil {
+				d.Logger.Error("listing containers", "err", err)
+				continue
 			}
+			d.Registry.Sync(containers)
+			d.Machine.Evaluate(ctx)
 		case <-ctx.Done():
 			d.Logger.Info("stopping poller...")
 			d.shutDown()
