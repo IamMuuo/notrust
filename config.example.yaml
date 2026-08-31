@@ -24,6 +24,7 @@ idle:
   pause_after: 10m
   stop_after: 30m
   cpu_threshold_percent: 0.5
+  net_threshold_bytes: 1024
 
 # proxy:
 #   bind_address: 127.0.0.1

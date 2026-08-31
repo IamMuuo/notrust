@@ -23,6 +23,12 @@ type PortBinding struct {
 	Protocol      string // "tcp" or "udp"
 }
 
+type StatsSample struct {
+	CPUPercent float64
+	NetRxBytes uint64
+	NetTxBytes uint64
+}
+
 // Engine is the narrow surface notrust needs from Docker. internal/state
 // and internal/metrics depend on this interface, never on the SDK
 // directly, so they can be tested against docker/fake.Engine without a
@@ -35,4 +41,5 @@ type Engine interface {
 	Unpause(ctx context.Context, id string) error
 	Start(ctx context.Context, id string) error
 	Stop(ctx context.Context, id string, timeout time.Duration) error
+	Stats(ctx context.Context, id string) (StatsSample, error)
 }

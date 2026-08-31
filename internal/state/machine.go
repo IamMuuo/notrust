@@ -16,6 +16,8 @@ type IdleChecker interface {
 type Thresholds struct {
 	PauseAfter time.Duration
 	StopAfter  time.Duration
+	CPUPercent float64 // e.g. 0.5
+	NetBytes   uint64  // e.g. 1024
 }
 
 // Machine applies ACTIVE -> PAUSED -> STOPPED transitions across

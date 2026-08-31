@@ -12,7 +12,7 @@ import (
 	"github.com/iammuuo/notrust/internal/config"
 	"github.com/iammuuo/notrust/internal/daemon"
 	"github.com/iammuuo/notrust/internal/docker"
-	"github.com/iammuuo/notrust/internal/state"
+	"github.com/iammuuo/notrust/internal/metrics"
 )
 
 func main() {
@@ -47,7 +47,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	d := daemon.New(logger, cfg, engine, state.NeverIdle{})
+	collector := metrics.NewCollector(engine, metrics.Thresholds{
+		CPUPercent: cfg.Idle.CPUThresholdPercent,
+		NetBytes:   cfg.Idle.NetThresholdBytes,
+	})
+
+	d := daemon.New(logger, cfg, engine, collector)
 
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),

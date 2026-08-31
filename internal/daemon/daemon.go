@@ -30,8 +30,8 @@ func New(
 		Engine:   engine,
 		Idle:     idle,
 		Thresholds: state.Thresholds{
-			PauseAfter: cfg.PauseAfter,
-			StopAfter:  cfg.StopAfter,
+			PauseAfter: cfg.Idle.PauseAfter,
+			StopAfter:  cfg.Idle.StopAfter,
 		},
 		Logger: logger,
 	}
