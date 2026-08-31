@@ -15,8 +15,9 @@ const envPrefix = "NOTRUST"
 // Config holds all daemon settings. Add new fields here as the daemon
 // grows (docker connection, idle thresholds, proxy, notify, logging).
 type Config struct {
-	PollInterval time.Duration `mapstructure:"poll_interval"`
-	Idle         IdleConfig    `mapstructure:"idle"`
+	PollInterval      time.Duration `mapstructure:"poll_interval"`
+	HeartbeatInterval time.Duration `mapstructure:"heartbeat_interval"`
+	Idle              IdleConfig    `mapstructure:"idle"`
 }
 
 type IdleConfig struct {
@@ -46,6 +47,7 @@ func Load(path string) (*Config, error) {
 	// defaults registered before AutomaticEnv so env vars reliably
 	// override every known key during Unmarshal, see note above
 	v.SetDefault("poll_interval", 3*time.Second)
+	v.SetDefault("heartbeat_interval", 5*time.Minute)
 	v.SetDefault("idle.pause_after", 10*time.Minute)
 	v.SetDefault("idle.stop_after", 30*time.Minute)
 	v.SetDefault("idle.cpu_threshold_percent", 0.5)

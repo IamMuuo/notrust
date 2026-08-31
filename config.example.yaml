@@ -13,18 +13,25 @@
 # Accepts Go duration strings: "500ms", "3s", "1m".
 poll_interval: 1s
 
+
+# How often a summary line ("N tracked, N active, N paused, N stopped")
+# is logged at INFO level, so a human tailing journalctl can confirm
+# the daemon is alive without wading through poll-tick DEBUG noise.
+heartbeat_interval: 5m
+
+# idle configuration
+idle:
+  pause_after: 10m
+  stop_after: 30m
+  cpu_threshold_percent: 0.5
+  net_threshold_bytes: 1024
+
 # --- reserved, not implemented yet ---
 # these are the sections planned for upcoming milestones, left here so
 # the shape of the config is visible ahead of time
 
 # docker:
 #   host: unix:///var/run/docker.sock
-
-idle:
-  pause_after: 10m
-  stop_after: 30m
-  cpu_threshold_percent: 0.5
-  net_threshold_bytes: 1024
 
 # proxy:
 #   bind_address: 127.0.0.1

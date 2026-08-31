@@ -44,12 +44,44 @@ func New(
 	}
 }
 
+func (d *Daemon) logHeartbeat() {
+	tracked := d.Registry.Snapshot()
+	var active, paused, stopped int
+	for _, tc := range tracked {
+		switch tc.Status {
+		case state.StatusActive:
+			active++
+		case state.StatusPaused:
+			paused++
+		case state.StatusStopped:
+			stopped++
+		}
+	}
+	d.Logger.Info(
+		"heartbeat",
+		"tracked",
+		len(tracked),
+		"active",
+		active,
+		"paused",
+		paused,
+		"stopped",
+		stopped,
+	)
+}
+
 func (d *Daemon) Run(ctx context.Context) error {
 	ticker := time.NewTicker(d.Cfg.PollInterval)
 	defer ticker.Stop()
 
+	heartbeatTicker := time.NewTicker(d.Cfg.HeartbeatInterval)
+	defer heartbeatTicker.Stop()
+
 	for {
 		select {
+		case <-heartbeatTicker.C:
+			d.logHeartbeat()
+
 		case <-ticker.C:
 			containers, err := d.Engine.List(ctx)
 			if err != nil {
