@@ -2,21 +2,29 @@ package daemon
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
 	"github.com/iammuuo/notrust/internal/config"
+	"github.com/iammuuo/notrust/internal/docker"
 )
 
 type Daemon struct {
 	Logger *slog.Logger
 	Cfg    *config.Config
+	Engine docker.Engine
 }
 
 func New(logger *slog.Logger, config *config.Config) *Daemon {
+	engine, err := docker.NewEngine()
+	if err != nil {
+		panic(err)
+	}
 	return &Daemon{
 		Logger: logger,
 		Cfg:    config,
+		Engine: engine,
 	}
 }
 
@@ -27,7 +35,11 @@ func (d *Daemon) Run(ctx context.Context) error {
 	for {
 		select {
 		case <-ticker.C:
-			d.Logger.Debug("polling docker containers.")
+			containers, _ := d.Engine.List(ctx)
+			fmt.Printf("%30s %30s\n", "Name", "State")
+			for _, container := range containers {
+				fmt.Printf("%30s %30s\n", container.Name, container.State)
+			}
 		case <-ctx.Done():
 			d.Logger.Info("stopping poller...")
 			d.shutDown()
