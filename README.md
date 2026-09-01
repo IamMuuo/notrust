@@ -3,7 +3,7 @@
 
 <p align="center">
   <a href="https://github.com/iammuuo/notrust/releases/latest"><img src="https://img.shields.io/github/v/release/iammuuo/notrust?style=flat-square" alt="Latest Release"></a>
-  <a href="https://github.com/iammuuo/notrust/actions"><img src="https://img.shields.io/github/actions/workflow/status/iammuuo/notrust/release.yml?style=flat-square" alt="Build Status"></a>
+  <a href="https://github.com/iammuuo/notrust/actions"><img src="https://img.shields.io/github/actions/workflow/status/iammuuo/notrust/release.yaml?style=flat-square" alt="Build Status"></a>
   <a href="https://goreportcard.com/report/github.com/iammuuo/notrust"><img src="https://goreportcard.com/badge/github.com/iammuuo/notrust?style=flat-square" alt="Go Report Card"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/iammuuo/notrust?style=flat-square" alt="License"></a>
 </p>
@@ -62,7 +62,7 @@ NOTRUST exists so you don't have to remember to clean up your own development en
 ### One command
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/iammuuo/notrust/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/iammuuo/notrust/master/install.sh | bash
 ```
 
 Detects your architecture, downloads the latest release, installs the daemon, sets up the systemd unit, drops a default config, and starts it.
