@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: notrustd
+    main: ./cmd/notrustd
+    binary: notrustd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}}
+
+  - id: notrust
+    main: ./cmd/notrust
+    binary: notrust
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}}
+
+archives:
+  - id: notrust
+    ids:
+      - notrustd
+      - notrust
+    formats:
+      - tar.gz
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else }}{{ .Arch }}{{ end }}
+    files:
+      - README.md
+      - LICENSE
+      - config.example.yaml
+      - notrust.service
+
+checksum:
+  name_template: checksums.txt
+
+nfpms:
+  - id: notrust
+    package_name: notrust
+    ids:
+      - notrustd
+      - notrust
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    maintainer: "Erick <hearteric57@gmail.com>"
+    description: >-
+      Watches idle local Docker containers and automatically pauses or
+      stops them to save host CPU and RAM.
+    homepage: https://github.com/iammuuo/notrust
+    license: Apache-2.0
+    contents:
+      - src: notrust.service
+        dst: /usr/lib/systemd/user/notrust.service
+      - src: config.example.yaml
+        dst: /usr/share/doc/notrust/config.example.yaml
+
+changelog:
+  use: git
+  sort: desc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]-]+\))?!?:'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^.*?fix(\([[:word:]-]+\))?!?:'
+      order: 1
+    - title: Performance
+      regexp: '^.*?perf(\([[:word:]-]+\))?!?:'
+      order: 2
+    - title: Refactoring
+      regexp: '^.*?refactor(\([[:word:]-]+\))?!?:'
+      order: 3
+    - title: Others
+      order: 999
+
+release:
+  header: |
+    ## notrust {{ .Tag }}
+
+    **not rust. just go, just build, just done.**
+
+    A tiny Linux daemon that watches idle Docker containers
+    and pauses or stops them to save CPU and RAM.
+
+  footer: |
+    ---
+
+    not rust. btw.
+
+    Built with [GoReleaser](https://goreleaser.com/).

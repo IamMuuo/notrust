@@ -41,3 +41,5 @@ tmp/
 # build folder
 build/
 bin/
+# Added by goreleaser init:
+dist/
