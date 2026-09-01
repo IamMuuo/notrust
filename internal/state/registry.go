@@ -1,26 +1,26 @@
 package state
 
 import (
+	"log/slog"
 	"sync"
+	"time"
 
 	"github.com/iammuuo/notrust/internal/docker"
 )
 
-// Registry holds one TrackedContainer per container id. Safe for
-// concurrent use.
 type Registry struct {
-	mu sync.Mutex
-	// id -> TrackedContainer key value
+	mu         sync.Mutex
 	containers map[string]*TrackedContainer
+	logger     *slog.Logger
 }
 
-func NewRegistry() *Registry {
-	return &Registry{containers: make(map[string]*TrackedContainer)}
+func NewRegistry(logger *slog.Logger) *Registry {
+	return &Registry{
+		containers: make(map[string]*TrackedContainer),
+		logger:     logger,
+	}
 }
 
-// Sync reconciles against a fresh poll from Engine.List. New containers
-// are added as ACTIVE (or whatever Docker currently reports), containers
-// Docker no longer reports at all are dropped entirely.
 func (r *Registry) Sync(snapshots []docker.ContainerSnapshot) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -37,7 +37,25 @@ func (r *Registry) Sync(snapshots []docker.ContainerSnapshot) {
 			}
 			continue
 		}
+
 		tc.Snapshot = snap
+
+		// Docker's real state is the source of truth. If it no longer
+		// matches what we last recorded, something outside notrust
+		// changed it: docker start, docker unpause, a compose restart,
+		// a human. Reconcile and reset timers, otherwise a container
+		// that comes back to life keeps a stale PausedAt/IdleSince from
+		// its previous life and can get immediately re-paused or
+		// re-stopped on the very next tick.
+		if newStatus := statusFromDocker(snap.State); newStatus != tc.Status {
+			if r.logger != nil {
+				r.logger.Info("container state changed externally",
+					"container", snap.Name, "from", tc.Status, "to", newStatus)
+			}
+			tc.Status = newStatus
+			tc.IdleSince = time.Time{}
+			tc.PausedAt = time.Time{}
+		}
 	}
 
 	for id := range r.containers {
@@ -47,9 +65,6 @@ func (r *Registry) Sync(snapshots []docker.ContainerSnapshot) {
 	}
 }
 
-// Snapshot returns a copy of the slice, safe to range over without
-// holding the lock. Each element is still a pointer into the registry
-// though, so a caller mutating tc.Status is intentional and persists.
 func (r *Registry) Snapshot() []*TrackedContainer {
 	r.mu.Lock()
 	defer r.mu.Unlock()

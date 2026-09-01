@@ -26,7 +26,7 @@ func New(
 	engine docker.Engine,
 	idle state.IdleChecker,
 ) *Daemon {
-	registry := state.NewRegistry()
+	registry := state.NewRegistry(logger)
 	machine := &state.Machine{
 		Registry: registry,
 		Engine:   engine,
