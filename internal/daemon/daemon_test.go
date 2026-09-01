@@ -26,7 +26,10 @@ func TestRun_StopsOnContextCancel(t *testing.T) {
 
 	d := New(
 		logger,
-		&config.Config{PollInterval: 5 * time.Millisecond},
+		&config.Config{
+			PollInterval:      5 * time.Millisecond,
+			HeartbeatInterval: 2 * time.Millisecond,
+		},
 		engine,
 		state.NeverIdle{},
 	)
@@ -52,6 +55,9 @@ func TestRun_StopsOnContextCancel(t *testing.T) {
 
 	out := buf.String()
 	t.Log(out)
+	if !strings.Contains(out, "heartbeat") {
+		t.Error("expected heartbeat log line")
+	}
 	if !strings.Contains(out, "stopping poller") {
 		t.Error("expected shutdown log line")
 	}
