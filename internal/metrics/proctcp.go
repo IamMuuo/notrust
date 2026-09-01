@@ -45,7 +45,7 @@ func scanEstablished(path string, hostPorts map[int]struct{}) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	scanner := bufio.NewScanner(f)
 	scanner.Scan() // discard header line

@@ -39,7 +39,7 @@ func (e *dockerEngine) Stats(
 	if err != nil {
 		return StatsSample{}, fmt.Errorf("fetching stats for %s: %w", id, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	var raw statsJSON
 	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
