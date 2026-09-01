@@ -1,7 +1,7 @@
 # not rust. just go, just build, just done.
 
 bin_dir := "bin"
-daemon  := "notrustd"
+daemon  := "notrusted"
 cli     := "notrust"
 
 default:

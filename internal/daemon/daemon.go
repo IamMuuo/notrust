@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	sysdaemon "github.com/coreos/go-systemd/v22/daemon"
+
 	"github.com/iammuuo/notrust/internal/config"
 	"github.com/iammuuo/notrust/internal/docker"
 	"github.com/iammuuo/notrust/internal/state"
@@ -71,11 +73,27 @@ func (d *Daemon) logHeartbeat() {
 }
 
 func (d *Daemon) Run(ctx context.Context) error {
+	pollTicker := time.NewTicker(d.Cfg.PollInterval)
+	defer pollTicker.Stop()
+
 	ticker := time.NewTicker(d.Cfg.PollInterval)
 	defer ticker.Stop()
 
 	heartbeatTicker := time.NewTicker(d.Cfg.HeartbeatInterval)
 	defer heartbeatTicker.Stop()
+
+	var watchdogC <-chan time.Time // nil unless systemd actually asked for it
+	if interval, err := sysdaemon.SdWatchdogEnabled(false); err != nil {
+		d.Logger.Warn("watchdog check failed", "err", err)
+	} else if interval > 0 {
+		wt := time.NewTicker(
+			interval / 2,
+		) // systemd docs: ping at least twice per WatchdogSec
+		defer wt.Stop()
+		watchdogC = wt.C
+	}
+
+	_, _ = sysdaemon.SdNotify(false, sysdaemon.SdNotifyReady)
 
 	for {
 		select {
@@ -90,6 +108,10 @@ func (d *Daemon) Run(ctx context.Context) error {
 			}
 			d.Registry.Sync(containers)
 			d.Machine.Evaluate(ctx)
+
+		case <-watchdogC:
+			_, _ = sysdaemon.SdNotify(false, sysdaemon.SdNotifyWatchdog)
+
 		case <-ctx.Done():
 			d.Logger.Info("stopping poller...")
 			d.shutDown()
